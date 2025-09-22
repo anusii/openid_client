@@ -53,25 +53,27 @@ class Authenticator {
   }) : this._(
           Flow.authorizationCodeWithPKCE(
             client,
-            state: window.localStorage['openid_client:state'],
+            state: window.localStorage.getItem('openid_client:state'),
           )
             ..scopes.addAll(scopes)
             ..redirectUri = Uri.parse(
               window.location.href.contains('#/')
                   ? window.location.href.replaceAll('#/', 'callback.html')
-                  : window.location.href + 'callback.html',
+                  : '${window.location.href}callback.html',
             ).removeFragment()
             ..dPoPToken = popToken,
         );
 
   /// Redirects the browser to the authentication URI.
   void authorize() {
+    _forgetCredentials();
     window.localStorage.setItem('openid_client:state', flow.state);
     window.location.href = flow.authenticationUri.toString();
   }
 
   /// Redirects the browser to the logout URI.
   void logout() async {
+    _forgetCredentials();
     var c = await credential;
     if (c == null) return;
     var uri = c.generateLogoutUrl(
@@ -79,6 +81,11 @@ class Authenticator {
     if (uri != null) {
       window.location.href = uri.toString();
     }
+  }
+
+  void _forgetCredentials() {
+    window.localStorage.removeItem('openid_client:state');
+    window.localStorage.removeItem('openid_client:auth');
   }
 
   static Future<Credential?> _credentialFromUri(Flow flow) async {

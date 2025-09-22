@@ -27,6 +27,8 @@ class Authenticator {
   /// The port used by the local http server.
   final int port;
 
+  String popToken;
+
   /// The html content to display when the authentication flow is completed.
   ///
   /// If this is null, the [redirectMessage] will be displayed instead.
@@ -43,6 +45,7 @@ class Authenticator {
     Function(String url)? urlLancher,
     String? redirectMessage,
     this.htmlPage,
+    this.popToken = '',
   })  : assert(
           htmlPage != null ? redirectMessage == null : true,
           'You can only use one variable htmlPage (give entire html) or redirectMessage (only string message)',
@@ -55,9 +58,10 @@ class Authenticator {
   /// when [redirectUri] is null and a [Flow.authorizationCode] flow otherwise.
   Authenticator(
     Client client, {
-    this.port = 3000,
+    this.port = 4000,
     this.urlLancher = _runBrowser,
     Iterable<String> scopes = const [],
+    this.popToken = '',
     Uri? redirectUri,
     String? redirectMessage,
     String? prompt,
@@ -69,12 +73,13 @@ class Authenticator {
         ),
         redirectMessage = redirectMessage ?? 'You can now close this window',
         flow = redirectUri == null
-            ? Flow.authorizationCodeWithPKCE(client,
+            ? Flow.authorizationCode(client,
                 prompt: prompt, additionalParameters: additionalParameters)
-            : Flow.authorizationCode(client,
+            : Flow.authorizationCodeWithPKCE(client,
                 prompt: prompt, additionalParameters: additionalParameters)
           ..scopes.addAll(scopes)
-          ..redirectUri = redirectUri ?? Uri.parse('http://localhost:$port/');
+          ..redirectUri = redirectUri ?? Uri.parse('http://localhost:$port/')
+          ..dPoPToken = popToken;
 
   /// Starts the authentication flow.
   ///

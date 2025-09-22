@@ -387,19 +387,40 @@ class Flow {
 
   Uri redirectUri;
 
-  Flow._(this.type, this.responseType, this.client,
-      {String? state,
-      String? codeVerifier,
-      Map<String, String>? additionalParameters,
-      Uri? redirectUri,
-      List<String> scopes = const ['openid', 'profile', 'email']})
-      : state = state ?? _randomString(20),
+  String dPoPToken = '';
+
+  // Flow._(this.type, this.responseType, this.client,
+  //     {String? state,
+  //     String? codeVerifier,
+  //     Map<String, String>? additionalParameters,
+  //     Uri? redirectUri,
+  //     List<String> scopes = const ['openid', 'profile', 'email']})
+  //     : state = state ?? _randomString(20),
+  //       _additionalParameters = {...?additionalParameters},
+  //       redirectUri = redirectUri ?? Uri.parse('http://localhost') {
+  //   var supportedScopes = client.issuer.metadata.scopesSupported ?? [];
+  //   for (var s in scopes) {
+  //     if (supportedScopes.contains(s)) {
+  //       this.scopes.add(s);
+  //     }
+  //   }
+
+  Flow._(
+    this.type,
+    this.responseType,
+    this.client, {
+    String? state,
+    String? codeVerifier,
+    Map<String, String>? additionalParameters,
+    Uri? redirectUri,
+    List<String> scopes = const ['openid', 'profile', 'offline_access'],
+  })  : state = state ?? _randomString(20),
         _additionalParameters = {...?additionalParameters},
         redirectUri = redirectUri ?? Uri.parse('http://localhost') {
     var supportedScopes = client.issuer.metadata.scopesSupported ?? [];
     for (var s in scopes) {
-      if (supportedScopes.contains(s)) {
-        this.scopes.add(s);
+      if (!supportedScopes.contains(s)) {
+        this.scopes.remove(s);
       }
     }
 

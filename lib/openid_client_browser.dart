@@ -36,14 +36,33 @@ class Authenticator {
 
   Authenticator._(this.flow) : credential = _credentialFromUri(flow);
 
-  Authenticator(Client client,
-      {Iterable<String> scopes = const [], String? device, String? prompt})
-      : this._(Flow.implicit(client,
-            device: device,
-            state: window.localStorage.getItem('openid_client:state'),
-            prompt: prompt)
-          ..scopes.addAll(scopes)
-          ..redirectUri = Uri.parse(window.location.href).removeFragment());
+  // Authenticator(Client client,
+  //     {Iterable<String> scopes = const [], String? device, String? prompt})
+  //     : this._(Flow.implicit(client,
+  //           device: device,
+  //           state: window.localStorage.getItem('openid_client:state'),
+  //           prompt: prompt)
+  //         ..scopes.addAll(scopes)
+  //         ..redirectUri = Uri.parse(window.location.href).removeFragment());
+
+  // With PKCE flow
+  Authenticator(
+    Client client, {
+    Iterable<String> scopes = const [],
+    popToken = '',
+  }) : this._(
+          Flow.authorizationCodeWithPKCE(
+            client,
+            state: window.localStorage['openid_client:state'],
+          )
+            ..scopes.addAll(scopes)
+            ..redirectUri = Uri.parse(
+              window.location.href.contains('#/')
+                  ? window.location.href.replaceAll('#/', 'callback.html')
+                  : window.location.href + 'callback.html',
+            ).removeFragment()
+            ..dPoPToken = popToken,
+        );
 
   /// Redirects the browser to the authentication URI.
   void authorize() {

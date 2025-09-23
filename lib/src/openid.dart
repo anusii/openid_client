@@ -290,7 +290,10 @@ class Credential {
 
   String? get refreshToken => _token.refreshToken;
 
-  Future<TokenResponse> getTokenResponse([bool forceRefresh = false]) async {
+  Future<TokenResponse> getTokenResponse({
+    bool forceRefresh = false,
+    String dPoPToken = '',
+  }) async {
     if (!forceRefresh &&
         _token.accessToken != null &&
         (_token.expiresAt == null ||
@@ -301,21 +304,42 @@ class Credential {
       return _token;
     }
 
+    var h =
+        base64.encode('${client.clientId}:${client.clientSecret}'.codeUnits);
+
     var grantType = _token.refreshToken != null
         ? 'refresh_token'
         : 'client_credentials'; // TODO: make this selection more explicit
 
-    var json = await http.post(client.issuer.tokenEndpoint,
-        body: {
-          'grant_type': grantType,
-          if (grantType == 'refresh_token')
-            'refresh_token': _token.refreshToken,
-          if (grantType == 'client_credentials')
-            'scope': _token.toJson()['scope'],
-          'client_id': client.clientId,
-          if (client.clientSecret != null) 'client_secret': client.clientSecret
-        },
-        client: client.httpClient);
+    ///Generate DPoP token using the RSA private key
+    var json = await http.post(
+      client.issuer.tokenEndpoint,
+      headers: {
+        'Accept': '*/*',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'content-type': 'application/x-www-form-urlencoded',
+        'DPoP': dPoPToken,
+        'Authorization': 'Basic $h',
+      },
+      body: {
+        'grant_type': grantType,
+        'token_type': 'DPoP',
+        if (grantType == 'refresh_token') 'refresh_token': _token.refreshToken,
+        if (grantType == 'client_credentials')
+          'scope': _token.toJson()['scope'],
+        'client_id': client.clientId,
+        if (client.clientSecret != null) 'client_secret': client.clientSecret
+      },
+      client: client.httpClient,
+    );
+
+    if (json['error'] != null) {
+      throw OpenIdException(
+        json['error'],
+        json['error_description'],
+        json['error_uri'],
+      );
+    }
 
     updateToken(json);
     return _token;

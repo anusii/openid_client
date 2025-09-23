@@ -327,8 +327,8 @@ class Credential {
         if (grantType == 'refresh_token') 'refresh_token': _token.refreshToken,
         if (grantType == 'client_credentials')
           'scope': _token.toJson()['scope'],
-        'client_id': client.clientId,
-        if (client.clientSecret != null) 'client_secret': client.clientSecret
+        // 'client_id': client.clientId,
+        // if (client.clientSecret != null) 'client_secret': client.clientSecret
       },
       client: client.httpClient,
     );
@@ -575,14 +575,24 @@ class Flow {
           },
           client: client.httpClient);
     } else if (type == FlowType.proofKeyForCodeExchange) {
+      var h =
+          base64.encode('${client.clientId}:${client.clientSecret}'.codeUnits);
       json = await http.post(client.issuer.tokenEndpoint,
+          headers: {
+            'Accept': '*/*',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'DPoP': dPoPToken,
+            'content-type': 'application/x-www-form-urlencoded',
+            'Authorization': 'Basic $h',
+            //'Connection': 'keep-alive',
+          },
           body: {
             'grant_type': 'authorization_code',
             'code': code,
             'redirect_uri': redirectUri.toString(),
-            'client_id': client.clientId,
-            if (client.clientSecret != null)
-              'client_secret': client.clientSecret,
+            // 'client_id': client.clientId,
+            // if (client.clientSecret != null)
+            //   'client_secret': client.clientSecret,
             'code_verifier': _proofKeyForCodeExchange['code_verifier']
           },
           client: client.httpClient);

@@ -60,8 +60,8 @@ class Authenticator {
     Client client, {
     this.port = 4000,
     this.urlLancher = _runBrowser,
-    Iterable<String> scopes = const [],
     this.popToken = '',
+    Iterable<String> scopes = const [],
     Uri? redirectUri,
     String? redirectMessage,
     String? prompt,
